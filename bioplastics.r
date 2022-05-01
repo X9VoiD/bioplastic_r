@@ -48,8 +48,17 @@ study_2_data_group_label <- "Added oxidized starch (% w/v)"
 # Functions #
 #############
 
+calculate_quality_map <- function(biodeg, tensile_strength, solubility) {
+  return(biodeg * tensile_strength / solubility)
+}
+
 calculate_quality <- function(data) {
-  return(data["biodegradability"] * data["tensile_strength"] / data["solubility"])
+  quality_map <- data.frame(quality = Map(calculate_quality_map,
+                                          data["biodegradability"],
+                                          data["tensile_strength"],
+                                          data["solubility"]))
+  names(quality_map) <- c("quality")
+  return(quality_map)
 }
 
 report_regression <- function(regression) {
@@ -121,14 +130,38 @@ plot_with_regression <- function(data, label, filename_base) {
   cat("\n")
 }
 
+plot_quality <- function(data, label, filename_base) {
+  message(paste0("|- ANALYSIS OF ", filename_base, "'s QUALITY"))
+  ggplot(data, aes(group, quality, group = 1)) +
+    geom_line(color = "blue") +
+    geom_point() +
+    geom_smooth(method = "lm",
+                formula = y ~ x,
+                se = FALSE,
+                fill = NA,
+                alpha = 0.5,
+                color = "green") +
+    theme(text = element_text(size = 11, family = "Serif"),
+          axis.title.y = element_text(vjust = 1),
+          axis.title.x = element_text(vjust = -1),
+          axis.text = element_text(size = rel(0.7))) +
+    labs(x = label, y = "Quality")
+  ggsave(paste0("output/", filename_base, "_quality.png"), width = 6.5, height = 4, units = "in", dpi = "print", type = "cairo-png")
+  report_regression(lm(biodegradability ~ group, data = data))
+  cat("\n")
+}
+
 ##############
 # Processing #
 ##############
 
-plot_with_regression(study_1_data, study_1_data_group_label, "study_1")
-plot_with_regression(study_2_data, study_2_data_group_label, "study_2")
-aaaa <- calculate_quality(study_1_data)
-bbbb <- calculate_quality(study_2_data)
+study_1 <- cbind(study_1_data, calculate_quality(study_1_data)["quality"])
+study_2 <- cbind(study_2_data, calculate_quality(study_2_data)["quality"])
+
+plot_with_regression(study_1, study_1_data_group_label, "study_1")
+plot_with_regression(study_2, study_2_data_group_label, "study_2")
+plot_quality(study_1, study_1_data_group_label, "study_1")
+plot_quality(study_2, study_2_data_group_label, "study_2")
 
 ###########
 # Cleanup #
