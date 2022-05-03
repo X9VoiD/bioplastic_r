@@ -147,7 +147,7 @@ plot_quality <- function(data, label, filename_base) {
           axis.text = element_text(size = rel(0.7))) +
     labs(x = label, y = "Quality")
   ggsave(paste0("output/", filename_base, "_quality.png"), width = 6.5, height = 4, units = "in", dpi = "print", type = "cairo-png")
-  report_regression(lm(biodegradability ~ group, data = data))
+  report_regression(lm(quality ~ group, data = data))
   cat("\n")
 }
 
